@@ -9,11 +9,13 @@ import re
 
 app = Flask(__name__, template_folder="templates")
 
+shorten_urls = {}
 
 ## taking the config from MySQL yaml 
 with open('db.yaml', 'r') as file:
     db = yaml.safe_load(file)
 
+# MySQL Configuration
 app.config['MYSQL_HOST'] = db['mysql_host']
 app.config['MYSQL_USER'] = db['mysql_user']
 app.config['MYSQL_PASSWORD'] = db['mysql_password']
@@ -21,24 +23,18 @@ app.config['MYSQL_DB'] = db['mysql_db']
 
 mysql = MySQL(app)
 
-
-
-## making the logic for the url shortner
-def url_shortener(length = 6):
+## making the logic for the URL shortener
+def url_shortener(length=6):
     chars = string.ascii_letters + string.digits
     short_url = "".join(random.choice(chars) for _ in range(length))
     return short_url
 
-
-## adding to the main homepage
 ## adding to the main homepage
 @app.route('/', methods=["GET", "POST"])
 def home():
     if request.method == "POST":
         long_url = request.form['long_url']
         short_url = url_shortener()
-        while short_url in shorten_urls:
-            short_url = url_shortener()
         
         # Storing the URL in MySQL database
         cur = mysql.connection.cursor()
@@ -48,9 +44,8 @@ def home():
         
         return f"Shortened URL: {request.url_root}{short_url}"
     return render_template("index.html")
-        
 
-## making the redirect to the shortend url
+## making the redirect to the shortened URL
 @app.route("/<short_url>")
 def redirect_url(short_url):
     cur = mysql.connection.cursor()
@@ -63,7 +58,5 @@ def redirect_url(short_url):
     else:
         return "URL not found ERROR 404"
 
-
-if (__name__) == "__main__":
+if __name__ == "__main__":
     app.run(debug=True)
-
